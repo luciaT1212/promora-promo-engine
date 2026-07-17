@@ -12,9 +12,13 @@ export class MinPurchaseAmountRule extends ValidationRule {
     if (!rule) return ValidationResult.success();
 
     const minAmount = Number(rule.parameters.minAmount ?? 0);
-    if (context.order.getSubtotal() < minAmount) {
+    if (!this.meetsMinimum(context.order.getSubtotal(), minAmount)) {
       return ValidationResult.failure(ErrorCode.MIN_AMOUNT_REQUIRED);
     }
     return ValidationResult.success();
+  }
+
+  private meetsMinimum(subtotal: number, minimum: number): boolean {
+    return subtotal >= minimum;
   }
 }

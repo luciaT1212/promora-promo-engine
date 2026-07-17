@@ -2,17 +2,16 @@ import { IDiscountStrategy } from '../discount-strategy.interface';
 import { PromoCode } from '../../../domain/entities/promo-code';
 import { OrderableInterface } from '../../../domain/interfaces/orderable.interface';
 import { DiscountType } from '../../../domain/entities/promo-code.types';
+import { Money } from '../../../domain/value-objects/money';
 
-/**
- * Estrategia de descuento fijo. TDR seccion 6.
- * Formula: min(value, subtotal). Nunca descuenta mas que el subtotal.
- */
 export class FixedDiscountStrategy implements IDiscountStrategy {
   calculate(promo: PromoCode, order: OrderableInterface): number {
-    return Math.min(promo.value, order.getSubtotal());
+    const subtotal = new Money(order.getSubtotal());
+    const value = new Money(promo.value);
+    return Money.min(value, subtotal).amount;
   }
 
-  canHandle(type: string): boolean {
+  canHandle(type: DiscountType): boolean {
     return type === DiscountType.FIXED;
   }
 }

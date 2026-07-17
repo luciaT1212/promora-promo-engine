@@ -5,13 +5,17 @@ import { EstadoActivoRule } from '../rules/mandatory/estado-activo.rule';
 import { ValidationContext } from '../../../domain/value-objects/validation-context';
 import { ValidationResult } from '../../../domain/value-objects/validation-result';
 import { IPromoCodeRepository } from '../../../domain/interfaces/promo-code.repository';
+import { Clock, SystemClock } from '../../../domain/interfaces/clock';
 
 export class MandatoryValidationPipeline {
   private readonly chainHead: ValidationRule;
 
-  constructor(promoRepo: IPromoCodeRepository) {
+  constructor(
+    promoRepo: IPromoCodeRepository,
+    clock: Clock = new SystemClock(),
+  ) {
     const existence = new ExistenceRule(promoRepo);
-    const vigencia = new VigenciaRule();
+    const vigencia = new VigenciaRule(clock);
     const estadoActivo = new EstadoActivoRule();
 
     existence.setNext(vigencia).setNext(estadoActivo);

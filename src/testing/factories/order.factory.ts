@@ -3,6 +3,7 @@ import { Order } from '../../domain/entities/order';
 import { OrderContext } from '../../domain/value-objects/order-context';
 import { BuyerProfile } from '../../domain/entities/buyer-profile';
 import { BuyerFactory } from './buyer.factory';
+import { OrderStatus } from '../../domain/entities/order-status';
 
 export interface OrderFactoryOverrides {
   id?: string;
@@ -10,6 +11,7 @@ export interface OrderFactoryOverrides {
   categoryId?: string;
   buyer?: BuyerProfile;
   currentOrders?: readonly string[];
+  status?: OrderStatus;
 }
 
 export class OrderFactory {
@@ -24,6 +26,7 @@ export class OrderFactory {
       overrides.id ?? uuid(),
       overrides.subtotal ?? 100,
       context,
+      overrides.status ?? OrderStatus.DRAFT,
     );
   }
 }

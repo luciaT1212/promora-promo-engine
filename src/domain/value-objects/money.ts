@@ -1,40 +1,43 @@
 export class Money {
-  private readonly _amount: number;
+  private readonly cents: number;
 
   constructor(amount: number) {
-    if (amount < 0) {
-      throw new Error('Money amount cannot be negative');
+    if (!Number.isFinite(amount) || amount < 0) {
+      throw new Error(
+        'El monto debe ser un número finito mayor o igual a cero',
+      );
     }
-    this._amount = this.round(amount);
+    this.cents = Math.round((amount + Number.EPSILON) * 100);
   }
 
   get amount(): number {
-    return this._amount;
+    return this.cents / 100;
   }
 
   add(other: Money): Money {
-    return new Money(this._amount + other._amount);
+    return Money.fromCents(this.cents + other.cents);
   }
 
   subtract(other: Money): Money {
-    const result = this._amount - other._amount;
-    return new Money(result < 0 ? 0 : result);
+    return Money.fromCents(Math.max(0, this.cents - other.cents));
   }
 
   multiply(factor: number): Money {
-    return new Money(this._amount * factor);
+    if (!Number.isFinite(factor) || factor < 0)
+      throw new Error('El factor monetario debe ser mayor o igual a cero');
+    return Money.fromCents(Math.round(this.cents * factor));
   }
 
   isGreaterThan(other: Money): boolean {
-    return this._amount > other._amount;
+    return this.cents > other.cents;
   }
 
   isLessThan(other: Money): boolean {
-    return this._amount < other._amount;
+    return this.cents < other.cents;
   }
 
   equals(other: Money): boolean {
-    return this._amount === other._amount;
+    return this.cents === other.cents;
   }
 
   static zero(): Money {
@@ -45,7 +48,9 @@ export class Money {
     return a.isLessThan(b) ? a : b;
   }
 
-  private round(value: number): number {
-    return Math.round(value * 100) / 100;
+  static fromCents(cents: number): Money {
+    if (!Number.isInteger(cents) || cents < 0)
+      throw new Error('Los centavos deben ser un entero mayor o igual a cero');
+    return new Money(cents / 100);
   }
 }

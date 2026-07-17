@@ -1,25 +1,45 @@
 import { IDiscountStrategy } from '../calculation/discount-strategy.interface';
 import { FixedDiscountStrategy } from '../calculation/strategies/fixed-discount.strategy';
-import { PercentageDiscountStrategy } from '../calculation/strategies/percentage-discount.strategy';
+import { PercentDiscountStrategy } from '../calculation/strategies/percent-discount.strategy';
 import { TieredDiscountStrategy } from '../calculation/strategies/tiered-discount.strategy';
 import { DiscountType } from '../../domain/entities/promo-code.types';
+import {
+  DiscountStrategyCreator,
+  RegisteredDiscountStrategyCreator,
+} from './creators/discount-strategy.creator';
 
-/**
- * Factory que devuelve la estrategia adecuada para cada tipo de descuento.
- * ASD - "DiscountStrategyFactory". Agregar un nuevo tipo = una nueva rama.
- */
 export class DiscountStrategyFactory {
-  private readonly strategies: IDiscountStrategy[] = [
-    new FixedDiscountStrategy(),
-    new PercentageDiscountStrategy(),
-    new TieredDiscountStrategy(),
-  ];
+  private readonly creators = new Map<DiscountType, DiscountStrategyCreator>();
+
+  constructor() {
+    this.register(
+      DiscountType.FIXED,
+      new RegisteredDiscountStrategyCreator(() => new FixedDiscountStrategy()),
+    );
+    this.register(
+      DiscountType.PERCENT,
+      new RegisteredDiscountStrategyCreator(
+        () => new PercentDiscountStrategy(),
+      ),
+    );
+    this.register(
+      DiscountType.TIERED,
+      new RegisteredDiscountStrategyCreator(() => new TieredDiscountStrategy()),
+    );
+  }
+
+  register(type: DiscountType, creator: DiscountStrategyCreator): void {
+    this.creators.set(type, creator);
+  }
 
   getStrategy(type: DiscountType): IDiscountStrategy {
-    const strategy = this.strategies.find((s) => s.canHandle(type));
-    if (!strategy) {
-      throw new Error(`No discount strategy found for type: ${type}`);
+    const creator = this.creators.get(type);
+    if (!creator) {
+      throw new Error(
+        `No existe una estrategia de descuento para el tipo: ${type}`,
+      );
     }
+    const strategy: IDiscountStrategy = creator.create();
     return strategy;
   }
 }

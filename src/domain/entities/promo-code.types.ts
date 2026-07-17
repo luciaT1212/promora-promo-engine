@@ -4,7 +4,7 @@ export enum DiscountType {
   TIERED = 'tiered',
 }
 
-export enum PromoState {
+export enum PromoStateType {
   DRAFT = 'draft',
   ACTIVE = 'active',
   PAUSED = 'paused',

@@ -1,8 +1,6 @@
 import { IRestrictedUserRepository } from '../../../domain/interfaces/restricted-user.repository';
 
-export class InMemoryRestrictedUserRepository
-  implements IRestrictedUserRepository
-{
+export class InMemoryRestrictedUserRepository implements IRestrictedUserRepository {
   private readonly store = new Map<string, Set<string>>();
 
   async isBuyerAuthorized(

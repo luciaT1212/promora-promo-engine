@@ -4,10 +4,13 @@ import { ValidationResult } from '../../../../domain/value-objects/validation-re
 import { ErrorCode } from '../../../../domain/errors/error-codes';
 import { RuleType } from '../../../../domain/entities/promo-code.types';
 import { IRestrictedUserRepository } from '../../../../domain/interfaces/restricted-user.repository';
+import { AuthorizedBuyerSpecification } from '../../../../domain/specifications/authorized-buyer.specification';
 
 export class RestrictedUsageRule extends ValidationRule {
-  constructor(private readonly restrictedRepo: IRestrictedUserRepository) {
+  private readonly specification: AuthorizedBuyerSpecification;
+  constructor(restrictedRepo: IRestrictedUserRepository) {
     super();
+    this.specification = new AuthorizedBuyerSpecification(restrictedRepo);
   }
 
   protected async validate(
@@ -16,10 +19,10 @@ export class RestrictedUsageRule extends ValidationRule {
     const rule = context.promo?.getRule(RuleType.RESTRICTED_USAGE);
     if (!rule) return ValidationResult.success();
 
-    const authorized = await this.restrictedRepo.isBuyerAuthorized(
-      context.promo!.id,
-      context.buyer.buyerId,
-    );
+    const authorized = await this.specification.isSatisfiedBy({
+      promoCodeId: context.promo!.id,
+      buyerId: context.buyer.buyerId,
+    });
 
     if (!authorized) {
       return ValidationResult.failure(ErrorCode.RESTRICTED_USAGE);

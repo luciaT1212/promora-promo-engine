@@ -1,0 +1,31 @@
+@baseUrl = http://localhost:3000
+
+### Validación contra PostgreSQL
+POST {{baseUrl}}/api/promo/validate
+Content-Type: application/json
+
+{"code":"DB-FIXED20","orderId":"40000000-0000-4000-8000-000000000001"}
+
+### Cálculo fixed: descuento esperado 20
+POST {{baseUrl}}/api/promo/calculate
+Content-Type: application/json
+
+{"code":"DB-FIXED20","orderId":"40000000-0000-4000-8000-000000000001"}
+
+### Cálculo percent: 15% de 200, descuento esperado 30
+POST {{baseUrl}}/api/promo/calculate
+Content-Type: application/json
+
+{"code":"DB-PERCENT15","orderId":"40000000-0000-4000-8000-000000000002"}
+
+### Cálculo tiered desordenado: 7 órdenes, descuento esperado 15
+POST {{baseUrl}}/api/promo/calculate
+Content-Type: application/json
+
+{"code":"DB-TIERED","orderId":"40000000-0000-4000-8000-000000000003"}
+
+### Aplicación con estado de pago explícito; repetir para probar duplicidad
+POST {{baseUrl}}/api/promo/apply
+Content-Type: application/json
+
+{"code":"DB-PERCENT15","orderId":"40000000-0000-4000-8000-000000000002","isPaid":false}

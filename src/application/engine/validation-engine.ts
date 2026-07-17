@@ -2,12 +2,8 @@ import { MandatoryValidationPipeline } from '../validation/pipelines/mandatory-v
 import { DynamicValidationPipeline } from '../validation/pipelines/dynamic-validation.pipeline';
 import { ValidationContext } from '../../domain/value-objects/validation-context';
 import { ValidationResult } from '../../domain/value-objects/validation-result';
+import { ErrorCode } from '../../domain/errors/error-codes';
 
-/**
- * Orquesta ambos pipelines de validacion. ASD - "ValidationEngine".
- * Corre mandatorio primero (orden estricto TDR seccion 2); si pasa,
- * corre el dinamico (reglas configurables del codigo).
- */
 export class ValidationEngine {
   constructor(
     private readonly mandatoryPipeline: MandatoryValidationPipeline,
@@ -18,7 +14,21 @@ export class ValidationEngine {
     const mandatoryResult = await this.mandatoryPipeline.execute(context);
     if (!mandatoryResult.isValid) return mandatoryResult;
 
-    // Aca context.promo ya fue cargado por ExistenceRule
+    try {
+      const subtotal = context.order.getSubtotal();
+      const orderContext = context.order.getOrderContext();
+      if (
+        !orderContext ||
+        !orderContext.buyerProfile ||
+        typeof orderContext.categoryId !== 'string'
+      )
+        return ValidationResult.failure(ErrorCode.INVALID_ORDER);
+      if (!Number.isFinite(subtotal) || subtotal < 0)
+        return ValidationResult.failure(ErrorCode.INVALID_AMOUNT);
+    } catch {
+      return ValidationResult.failure(ErrorCode.INVALID_ORDER);
+    }
+
     return this.dynamicPipeline.execute(context, context.promo!);
   }
 }

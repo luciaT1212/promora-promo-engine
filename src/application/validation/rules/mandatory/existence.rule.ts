@@ -12,7 +12,12 @@ export class ExistenceRule extends ValidationRule {
   protected async validate(
     context: ValidationContext,
   ): Promise<ValidationResult> {
-    const promo = await this.promoRepo.findByCode(context.promoCodeString);
+    const code =
+      typeof context.promoCodeString === 'string'
+        ? context.promoCodeString.trim()
+        : '';
+    if (!code) return ValidationResult.failure(ErrorCode.INVALID_CODE);
+    const promo = await this.promoRepo.findByCode(code);
     if (!promo) {
       return ValidationResult.failure(ErrorCode.INVALID_CODE);
     }

@@ -1,7 +1,11 @@
 import { PromoCodeUsage } from '../entities/promo-code-usage';
 
 export interface IPromoCodeUsageRepository {
+  runSerializable<T>(
+    operation: (repository: IPromoCodeUsageRepository) => Promise<T>,
+  ): Promise<T>;
   save(usage: PromoCodeUsage): Promise<void>;
+  existsByCodeAndOrder(promoCodeId: string, orderId: string): Promise<boolean>;
 
   countPaidUsesByCode(
     promoCodeId: string,

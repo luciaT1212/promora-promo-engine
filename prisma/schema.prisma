@@ -1,0 +1,148 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum PromoStateType {
+  draft
+  active
+  paused
+  expired
+}
+
+enum DiscountType {
+  fixed
+  percent
+  tiered
+}
+
+enum OrderStatus {
+  draft
+  cart
+  pending
+  paid
+  cancelled
+}
+
+enum OrderType {
+  service
+  product
+  subscription
+}
+
+model PromoCode {
+  id              String                  @id @default(uuid()) @db.Uuid
+  code            String                  @unique
+  type            DiscountType
+  value           Decimal                 @db.Decimal(18, 2)
+  state           PromoStateType
+  startDate       DateTime                @map("start_date")
+  endDate         DateTime                @map("end_date")
+  createdAt       DateTime                @default(now()) @map("created_at")
+  updatedAt       DateTime                @updatedAt @map("updated_at")
+  rules           PromoRule[]
+  tiers           TierConfiguration[]
+  usages          PromoCodeUsage[]
+  restrictedUsers RestrictedUserMapping[]
+
+  @@map("promo_codes")
+}
+
+model PromoRule {
+  id          String    @id @default(uuid()) @db.Uuid
+  promoCodeId String    @map("promo_code_id") @db.Uuid
+  ruleType    String    @map("rule_type")
+  parameters  Json
+  isActive    Boolean   @default(true) @map("is_active")
+  priority    Int       @default(0)
+  createdAt   DateTime  @default(now()) @map("created_at")
+  promoCode   PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@index([promoCodeId, isActive])
+  @@map("promo_rules")
+}
+
+model TierConfiguration {
+  id              String    @id @default(uuid()) @db.Uuid
+  promoCodeId     String    @map("promo_code_id") @db.Uuid
+  minOrders       Int       @map("min_orders")
+  discountPercent Decimal   @map("discount_percent") @db.Decimal(5, 2)
+  orderIndex      Int       @default(0) @map("order_index")
+  promoCode       PromoCode @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, minOrders])
+  @@map("tier_configurations")
+}
+
+model PromoCodeUsage {
+  id             String       @id @default(uuid()) @db.Uuid
+  promoCodeId    String       @map("promo_code_id") @db.Uuid
+  orderId        String       @map("order_id") @db.Uuid
+  buyerId        String       @map("buyer_id") @db.Uuid
+  discountAmount Decimal      @map("discount_amount") @db.Decimal(18, 2)
+  isPaid         Boolean      @map("is_paid")
+  createdAt      DateTime     @default(now()) @map("created_at")
+  promoCode      PromoCode    @relation(fields: [promoCodeId], references: [id], onDelete: Restrict)
+  order          Order        @relation(fields: [orderId], references: [id], onDelete: Restrict)
+  buyer          BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+
+  @@unique([promoCodeId, orderId])
+  @@index([promoCodeId, isPaid])
+  @@index([promoCodeId, buyerId, isPaid])
+  @@map("promo_code_usages")
+}
+
+model RestrictedUserMapping {
+  id          String       @id @default(uuid()) @db.Uuid
+  promoCodeId String       @map("promo_code_id") @db.Uuid
+  buyerId     String       @map("buyer_id") @db.Uuid
+  createdAt   DateTime     @default(now()) @map("created_at")
+  promoCode   PromoCode    @relation(fields: [promoCodeId], references: [id], onDelete: Cascade)
+  buyer       BuyerProfile @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+
+  @@unique([promoCodeId, buyerId])
+  @@map("restricted_user_mappings")
+}
+
+model BuyerProfile {
+  id           String                  @id @default(uuid()) @db.Uuid
+  totalOrders  Int                     @default(0) @map("total_orders")
+  isFirstBuyer Boolean                 @default(true) @map("is_first_buyer")
+  orders       Order[]
+  usages       PromoCodeUsage[]
+  restrictions RestrictedUserMapping[]
+
+  @@map("buyer_profiles")
+}
+
+model Order {
+  id         String           @id @default(uuid()) @db.Uuid
+  buyerId    String           @map("buyer_id") @db.Uuid
+  categoryId String           @map("category_id") @db.Uuid
+  subtotal   Decimal          @db.Decimal(18, 2)
+  status     OrderStatus
+  type       OrderType
+  createdAt  DateTime         @default(now()) @map("created_at")
+  updatedAt  DateTime         @updatedAt @map("updated_at")
+  buyer      BuyerProfile     @relation(fields: [buyerId], references: [id], onDelete: Restrict)
+  category   Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  usages     PromoCodeUsage[]
+
+  @@index([buyerId, status])
+  @@map("orders")
+}
+
+model Category {
+  id       String     @id @default(uuid()) @db.Uuid
+  name     String
+  parentId String?    @map("parent_id") @db.Uuid
+  parent   Category?  @relation("CategoryTree", fields: [parentId], references: [id], onDelete: SetNull)
+  children Category[] @relation("CategoryTree")
+  orders   Order[]
+
+  @@index([parentId])
+  @@map("categories")
+}

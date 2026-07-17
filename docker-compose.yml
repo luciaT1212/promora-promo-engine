@@ -1,0 +1,22 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: promora-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: promora_db
+      POSTGRES_USER: promora
+      POSTGRES_PASSWORD: promora123
+    ports:
+      - '55432:5432'
+    volumes:
+      - promora_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U promora -d promora_db']
+      interval: 5s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
+
+volumes:
+  promora_postgres_data:

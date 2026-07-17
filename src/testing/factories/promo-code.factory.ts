@@ -2,7 +2,7 @@ import { v4 as uuid } from 'uuid';
 import { PromoCode } from '../../domain/entities/promo-code';
 import {
   DiscountType,
-  PromoState,
+  PromoStateType,
 } from '../../domain/entities/promo-code.types';
 import { PromoRule } from '../../domain/entities/promo-rule';
 import { PostCalcRule } from '../../domain/entities/post-calc-rule';
@@ -13,7 +13,7 @@ export interface PromoCodeFactoryOverrides {
   code?: string;
   type?: DiscountType;
   value?: number;
-  state?: PromoState;
+  state?: PromoStateType;
   startDate?: Date;
   endDate?: Date;
   rules?: readonly PromoRule[];
@@ -31,7 +31,7 @@ export class PromoCodeFactory {
       overrides.code ?? `TEST-${Math.floor(Math.random() * 10000)}`,
       overrides.type ?? DiscountType.PERCENT,
       overrides.value ?? 10,
-      overrides.state ?? PromoState.ACTIVE,
+      overrides.state ?? PromoStateType.ACTIVE,
       overrides.startDate ?? oneMonthAgo,
       overrides.endDate ?? oneMonthAhead,
       overrides.rules ?? [],
@@ -59,11 +59,11 @@ export class PromoCodeFactory {
   }
 
   static draft(over: PromoCodeFactoryOverrides = {}): PromoCode {
-    return this.create({ ...over, state: PromoState.DRAFT });
+    return this.create({ ...over, state: PromoStateType.DRAFT });
   }
 
   static paused(over: PromoCodeFactoryOverrides = {}): PromoCode {
-    return this.create({ ...over, state: PromoState.PAUSED });
+    return this.create({ ...over, state: PromoStateType.PAUSED });
   }
 
   static expiredByDate(over: PromoCodeFactoryOverrides = {}): PromoCode {

@@ -35,6 +35,8 @@ export class RuleFactory {
   }
 
   static maxDiscount(maxAmount: number): PostCalcRule {
-    return new PostCalcRule(PostCalcRuleType.MAX_DISCOUNT_AMOUNT, { maxAmount });
+    return new PostCalcRule(PostCalcRuleType.MAX_DISCOUNT_AMOUNT, {
+      maxAmount,
+    });
   }
 }

@@ -1,1 +1,18 @@
+# Documentos locales
+ASD.docx
+
+# Variables de entorno
+.env
+
+# Reportes
+QA_REPORT.md
+
+# Cobertura
+coverage/
+
+# Agentes
+.agents/
+
+# Build
+dist/
 node_modules

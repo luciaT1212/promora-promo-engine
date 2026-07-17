@@ -1,37 +1,31 @@
 import { v4 as uuid } from 'uuid';
 import { ValidationEngine } from './validation-engine';
-import { DiscountCalculator, CalculationResult } from '../calculation/discount-calculator';
+import {
+  DiscountCalculator,
+  CalculationResult,
+} from '../calculation/discount-calculator';
 import { ValidationContext } from '../../domain/value-objects/validation-context';
 import { ValidationResult } from '../../domain/value-objects/validation-result';
 import { OrderableInterface } from '../../domain/interfaces/orderable.interface';
 import { BuyerProfile } from '../../domain/entities/buyer-profile';
 import { PromoCodeUsage } from '../../domain/entities/promo-code-usage';
 import { IPromoCodeUsageRepository } from '../../domain/interfaces/promo-code-usage.repository';
+import { ErrorCode } from '../../domain/errors/error-codes';
+import { DuplicatePromoUsageError } from '../../domain/errors/duplicate-promo-usage.error';
 
-/**
- * Resultado agregado del motor: validacion + calculo.
- */
 export interface PromoCodeResult {
   validation: ValidationResult;
   calculation: CalculationResult | null;
 }
 
-/**
- * Orquestador central del motor de codigos promocionales.
- * ASD - "PromoCodeEngine". Coordina el flujo completo:
- *   validar -> calcular -> registrar uso.
- * NO contiene logica de reglas ni de calculo (delega en las capas).
- */
 export class PromoCodeEngine {
+  private readonly applyQueues = new Map<string, Promise<void>>();
   constructor(
     private readonly validationEngine: ValidationEngine,
     private readonly discountCalculator: DiscountCalculator,
     private readonly usageRepo: IPromoCodeUsageRepository,
   ) {}
 
-  /**
-   * Solo valida. No calcula ni registra uso.
-   */
   async validate(
     promoCodeString: string,
     order: OrderableInterface,
@@ -41,11 +35,15 @@ export class PromoCodeEngine {
     return this.validationEngine.validate(context);
   }
 
-  /**
-   * Valida y calcula el descuento. No registra uso.
-   * Util para pre-visualizar el descuento antes de confirmar la orden.
-   */
   async validateAndCalculate(
+    promoCodeString: string,
+    order: OrderableInterface,
+    buyer: BuyerProfile,
+  ): Promise<PromoCodeResult> {
+    return this.calculate(promoCodeString, order, buyer);
+  }
+
+  async calculate(
     promoCodeString: string,
     order: OrderableInterface,
     buyer: BuyerProfile,
@@ -61,32 +59,91 @@ export class PromoCodeEngine {
     return { validation, calculation };
   }
 
-  /**
-   * Flujo completo: valida, calcula, y registra el uso.
-   * El uso queda con isPaid=false (recien al pagar la orden se marca true).
-   */
+  // El uso permanece pendiente hasta que el proceso de pago lo confirme.
   async validateAndApply(
     promoCodeString: string,
     orderId: string,
     order: OrderableInterface,
     buyer: BuyerProfile,
+    isPaid: boolean,
   ): Promise<PromoCodeResult> {
-    const result = await this.validateAndCalculate(promoCodeString, order, buyer);
-    if (!result.validation.isValid || !result.calculation) return result;
+    return this.apply(promoCodeString, orderId, order, buyer, isPaid);
+  }
 
-    const context = new ValidationContext(promoCodeString, order, buyer);
-    await this.validationEngine.validate(context);
-
-    const usage = new PromoCodeUsage(
-      uuid(),
-      context.promo!.id,
-      orderId,
-      buyer.buyerId,
-      result.calculation.discountAmount,
-      false,
+  async apply(
+    promoCodeString: string,
+    orderId: string,
+    order: OrderableInterface,
+    buyer: BuyerProfile,
+    isPaid: boolean,
+  ): Promise<PromoCodeResult> {
+    const normalizedCode =
+      typeof promoCodeString === 'string'
+        ? promoCodeString.trim().toUpperCase()
+        : '';
+    const key = `${normalizedCode}:${orderId}`;
+    return this.withApplyLock(key, () =>
+      this.usageRepo.runSerializable(async (transactionalUsageRepo) => {
+        const context = new ValidationContext(promoCodeString, order, buyer);
+        const validation = await this.validationEngine.validate(context);
+        if (!validation.isValid || !context.promo)
+          return { validation, calculation: null };
+        if (
+          await transactionalUsageRepo.existsByCodeAndOrder(
+            context.promo.id,
+            orderId,
+          )
+        ) {
+          return {
+            validation: ValidationResult.failure(ErrorCode.CODE_ALREADY_USED),
+            calculation: null,
+          };
+        }
+        const calculation = this.discountCalculator.calculate(
+          context.promo,
+          order,
+        );
+        try {
+          await transactionalUsageRepo.save(
+            new PromoCodeUsage(
+              uuid(),
+              context.promo.id,
+              orderId,
+              buyer.buyerId,
+              calculation.discountAmount,
+              isPaid,
+            ),
+          );
+        } catch (error) {
+          if (error instanceof DuplicatePromoUsageError)
+            return {
+              validation: ValidationResult.failure(ErrorCode.CODE_ALREADY_USED),
+              calculation: null,
+            };
+          throw error;
+        }
+        return { validation, calculation };
+      }),
     );
-    await this.usageRepo.save(usage);
+  }
 
-    return result;
+  private async withApplyLock<T>(
+    key: string,
+    action: () => Promise<T>,
+  ): Promise<T> {
+    const previous = this.applyQueues.get(key) ?? Promise.resolve();
+    let release!: () => void;
+    const current = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const queued = previous.then(() => current);
+    this.applyQueues.set(key, queued);
+    await previous;
+    try {
+      return await action();
+    } finally {
+      release();
+      if (this.applyQueues.get(key) === queued) this.applyQueues.delete(key);
+    }
   }
 }

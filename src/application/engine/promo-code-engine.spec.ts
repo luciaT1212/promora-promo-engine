@@ -102,12 +102,13 @@ describe('PromoCodeEngine (integracion)', () => {
       'order-999',
       OrderFactory.create({ subtotal: 100, buyer }),
       buyer,
+      false,
     );
 
     expect(result.validation.isValid).toBe(true);
     expect(result.calculation!.discountAmount).toBe(10);
 
-    // El uso registrado tiene isPaid=false: no cuenta para limites hasta pagar
+    // Los usos pendientes no consumen los límites de una promoción.
     const paidCount = await seeder.usages.countPaidUsesByCode(promo.id);
     expect(paidCount).toBe(0);
   });

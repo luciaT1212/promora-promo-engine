@@ -1,14 +1,12 @@
+import { IsNotEmpty, IsString } from 'class-validator';
+
 export class ValidatePromoRequestDto {
+  @IsString()
+  @IsNotEmpty()
   code!: string;
+  @IsString()
+  @IsNotEmpty()
   orderId!: string;
-  subtotal!: number;
-  categoryId!: string;
-  currentOrders?: string[];
-  buyer!: {
-    buyerId: string;
-    totalOrders: number;
-    isFirstBuyer: boolean;
-  };
 }
 
 export interface ValidatePromoResponseDto {

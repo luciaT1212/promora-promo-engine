@@ -3,14 +3,20 @@ import { ValidationContext } from '../../../domain/value-objects/validation-cont
 import { ValidationResult } from '../../../domain/value-objects/validation-result';
 import { PromoCode } from '../../../domain/entities/promo-code';
 import { ValidationRuleFactory } from '../../factories/validation-rule.factory';
+import { PromoConfigurationValidator } from '../promo-configuration.validator';
 
 export class DynamicValidationPipeline {
-  constructor(private readonly ruleFactory: ValidationRuleFactory) {}
+  constructor(
+    private readonly ruleFactory: ValidationRuleFactory,
+    private readonly configurationValidator = new PromoConfigurationValidator(),
+  ) {}
 
   async execute(
     context: ValidationContext,
     promo: PromoCode,
   ): Promise<ValidationResult> {
+    const configuration = this.configurationValidator.validate(promo);
+    if (!configuration.isValid) return configuration;
     const activeRules = promo.getActiveRules();
     if (activeRules.length === 0) return ValidationResult.success();
 

@@ -4,7 +4,7 @@ import { OrderFactory } from './order.factory';
 import { BuyerFactory } from './buyer.factory';
 import {
   DiscountType,
-  PromoState,
+  PromoStateType,
   RuleType,
 } from '../../domain/entities/promo-code.types';
 
@@ -13,7 +13,7 @@ describe('Factories - smoke tests', () => {
     const promo = PromoCodeFactory.percent(15);
     expect(promo.type).toBe(DiscountType.PERCENT);
     expect(promo.value).toBe(15);
-    expect(promo.state).toBe(PromoState.ACTIVE);
+    expect(promo.state).toBe(PromoStateType.ACTIVE);
     expect(promo.isActive()).toBe(true);
   });
 
