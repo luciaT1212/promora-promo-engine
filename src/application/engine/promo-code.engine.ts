@@ -18,6 +18,16 @@ export class PromoCodeEngine {
     private usageRepository: IPromoCodeUsageRepository,
   ) {}
 
+  private getErrorMessage(error: any): string {
+    if (error instanceof Error) {
+      return error.message;
+    }
+    if (typeof error === 'string') {
+      return error;
+    }
+    return 'Error desconocido';
+  }
+
   async validate(
     code: string,
     order: OrderableInterface,
@@ -39,7 +49,7 @@ export class PromoCodeEngine {
 
       return result;
     } catch (error) {
-      return ValidationResult.failure('VALIDATION_ERROR' as any, error.message);
+      return ValidationResult.failure('VALIDATION_ERROR' as any, this.getErrorMessage(error));
     }
   }
 
@@ -64,7 +74,7 @@ export class PromoCodeEngine {
       const result = this.discountCalculator.calculate(promoCode, order);
       return result;
     } catch (error) {
-      return ValidationResult.failure('CALCULATION_ERROR' as any, error.message);
+      return ValidationResult.failure('CALCULATION_ERROR' as any, this.getErrorMessage(error));
     }
   }
 
@@ -104,7 +114,7 @@ export class PromoCodeEngine {
         discount: calcResult,
       };
     } catch (error) {
-      return { success: false, error: error.message };
+      return { success: false, error: this.getErrorMessage(error) };
     }
   }
 }

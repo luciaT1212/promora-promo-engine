@@ -22,6 +22,9 @@ export class OrderContext {
   }
 
   hasCategory(categoryId: string): boolean {
+    if (!this.categories) {
+      return false;
+    }
     return this.categories.includes(categoryId);
   }
 
@@ -30,11 +33,11 @@ export class OrderContext {
   }
 
   exceedsGlobalAmountLimit(limit: number): boolean {
-    return this.buyerProfile.totalSpent >= limit;
+    return this.buyerProfile.totalSpent > limit;
   }
 
   exceedsOrderLimit(limit: number): boolean {
-    return this.buyerProfile.totalOrders >= limit;
+    return this.buyerProfile.totalOrders > limit;
   }
 
   getPreviousOrderCount(): number {

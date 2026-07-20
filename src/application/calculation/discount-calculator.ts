@@ -20,10 +20,18 @@ export class DiscountCalculator {
     }
 
     const subtotal = order.getSubtotal();
+    if (subtotal < 0) {
+      throw new Error(`Subtotal negativo inválido: ${subtotal}`);
+    }
+
     let discountAmount: number;
 
     if (promoCode.type.toString() === 'tiered') {
-      const orderCount = order.getBuyer().totalOrders;
+      const buyer = order.getBuyer();
+      if (!buyer) {
+        throw new Error('Comprador no encontrado');
+      }
+      const orderCount = buyer.totalOrders;
       discountAmount = (strategy as any).calculate(
         promoCode.value,
         subtotal,
@@ -32,6 +40,10 @@ export class DiscountCalculator {
       );
     } else {
       discountAmount = strategy.calculate(promoCode.value, subtotal);
+    }
+
+    if (discountAmount < 0) {
+      throw new Error(`Descuento negativo inválido: ${discountAmount}`);
     }
 
     return new CalculationResult(

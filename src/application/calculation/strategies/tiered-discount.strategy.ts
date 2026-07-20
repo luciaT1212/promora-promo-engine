@@ -11,7 +11,7 @@ export class TieredDiscountStrategy implements IDiscountStrategy {
     tiers?: TierConfiguration[],
     orderCount?: number,
   ): number {
-    if (!tiers || !orderCount) {
+    if (!tiers || orderCount === undefined || orderCount === null) {
       return 0;
     }
 
