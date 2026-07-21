@@ -19,7 +19,9 @@ export class OrderFactory {
     const orderId = overrides.id ?? uuid();
     const buyer = overrides.buyer ?? BuyerFactory.create();
     const subtotal = overrides.subtotal ?? 100;
-    const categories = overrides.categoryId ? [overrides.categoryId] : ['cat-default'];
+    const categories = overrides.categoryId
+      ? [overrides.categoryId]
+      : ['cat-default'];
 
     const context = new OrderContext(
       orderId,

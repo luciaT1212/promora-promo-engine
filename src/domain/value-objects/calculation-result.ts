@@ -1,4 +1,4 @@
-import { DiscountType } from '../entities/promo-code.entity';
+import { DiscountType } from '../entities/promo-code.types';
 
 export class CalculationResult {
   discountAmount: number;
@@ -12,7 +12,9 @@ export class CalculationResult {
     originalSubtotal: number,
   ) {
     if (discountAmount > originalSubtotal) {
-      throw new Error(`Descuento (${discountAmount}) no puede exceder subtotal (${originalSubtotal})`);
+      throw new Error(
+        `Descuento (${discountAmount}) no puede exceder subtotal (${originalSubtotal})`,
+      );
     }
     this.discountAmount = discountAmount;
     this.discountType = discountType;

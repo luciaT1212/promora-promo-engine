@@ -1,5 +1,4 @@
 import { PromoCodeEngine } from './promo-code-engine';
-import { ValidationEngine } from './validation-engine';
 import { MandatoryValidationPipeline } from '../validation/pipelines/mandatory-validation.pipeline';
 import { DynamicValidationPipeline } from '../validation/pipelines/dynamic-validation.pipeline';
 import { ValidationRuleFactory } from '../factories/validation-rule.factory';
@@ -26,10 +25,15 @@ describe('PromoCodeEngine (integracion)', () => {
       seeder.restrictedUsers,
     );
     const dynamic = new DynamicValidationPipeline(ruleFactory);
-    const validationEngine = new ValidationEngine(mandatory, dynamic);
 
     const calculator = new DiscountCalculator(new DiscountStrategyFactory());
-    engine = new PromoCodeEngine(validationEngine, calculator, seeder.usages);
+    engine = new PromoCodeEngine(
+      mandatory,
+      dynamic,
+      calculator,
+      seeder.promoCodes,
+      seeder.usages,
+    );
   });
 
   it('validate: retorna INVALID_CODE si el codigo no existe', async () => {

@@ -1,18 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { ValidationPipeline } from '../validation/validation-pipeline';
+import type { IPromoCodeRepository } from '../../domain/interfaces/promo-code.repository';
+import type { IPromoCodeUsageRepository } from '../../domain/interfaces/promo-code-usage.repository';
+import { ValidationPipeline } from '../validation/pipelines/validation-pipeline';
 import { DiscountCalculator } from '../calculation/discount-calculator';
-import { IPromoCodeRepository } from '../../domain/interfaces/promo-code.repository';
-import { IPromoCodeUsageRepository } from '../../domain/interfaces/promo-code-usage.repository';
 import { ValidationResult } from '../../domain/value-objects/validation-result';
 import { CalculationResult } from '../../domain/value-objects/calculation-result';
+import { ValidationContext } from '../../domain/value-objects/validation-context';
 import { OrderableInterface } from '../../domain/interfaces/orderable.interface';
-import { PromoCodeUsage } from '../../domain/entities/promo-code-usage.entity';
+import { PromoCodeUsage } from '../../domain/entities/promo-code-usage';
 import { v4 as uuid } from 'uuid';
 
 @Injectable()
 export class PromoCodeEngine {
   constructor(
-    private validationPipeline: ValidationPipeline,
+    private mandatoryPipeline: ValidationPipeline,
+    private dynamicPipeline: ValidationPipeline,
     private discountCalculator: DiscountCalculator,
     private promoCodeRepository: IPromoCodeRepository,
     private usageRepository: IPromoCodeUsageRepository,
@@ -31,50 +33,59 @@ export class PromoCodeEngine {
   async validate(
     code: string,
     order: OrderableInterface,
-    buyer?: any,
   ): Promise<ValidationResult> {
     try {
       const promoCode = await this.promoCodeRepository.findByCode(code);
 
       if (!promoCode) {
-        return ValidationResult.failure('INVALID_CODE' as any, 'El código no existe');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        return ValidationResult.failure('INVALID_CODE' as any);
       }
 
       const orderContext = order.getOrderContext();
-
-      const result = await this.validationPipeline.execute({
+      const context = new ValidationContext(
+        code,
+        order,
+        orderContext.buyerProfile,
         promoCode,
-        orderContext,
-      });
+      );
 
-      return result;
-    } catch (error) {
-      return ValidationResult.failure('VALIDATION_ERROR' as any, this.getErrorMessage(error));
+      const mandatoryResult = await this.mandatoryPipeline.execute(context);
+      if (!mandatoryResult.isValid) {
+        return mandatoryResult;
+      }
+
+      const dynamicResult = await this.dynamicPipeline.execute(context);
+      return dynamicResult;
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      return ValidationResult.failure('VALIDATION_ERROR' as any);
     }
   }
 
   async calculate(
     code: string,
     order: OrderableInterface,
-    buyer?: any,
   ): Promise<CalculationResult | ValidationResult> {
-    const validation = await this.validate(code, order, buyer);
+    const validation = await this.validate(code, order);
 
     if (!validation.isValid) {
-      return validation as any;
+      return validation;
     }
 
     try {
       const promoCode = await this.promoCodeRepository.findByCode(code);
 
       if (!promoCode) {
-        return ValidationResult.failure('INVALID_CODE' as any, 'El código no existe');
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+        return ValidationResult.failure('INVALID_CODE' as any);
       }
 
       const result = this.discountCalculator.calculate(promoCode, order);
       return result;
-    } catch (error) {
-      return ValidationResult.failure('CALCULATION_ERROR' as any, this.getErrorMessage(error));
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      return ValidationResult.failure('CALCULATION_ERROR' as any);
     }
   }
 
@@ -83,12 +94,17 @@ export class PromoCodeEngine {
     orderId: string,
     order: OrderableInterface,
     buyer?: any,
-  ): Promise<{ success: boolean; usageId?: string; discount?: CalculationResult; error?: string }> {
+  ): Promise<{
+    success: boolean;
+    usageId?: string;
+    discount?: CalculationResult;
+    error?: string;
+  }> {
     try {
-      const calcResult = await this.calculate(code, order, buyer);
+      const calcResult = await this.calculate(code, order);
 
       if (calcResult instanceof ValidationResult) {
-        return { success: false, error: calcResult.message };
+        return { success: false, error: 'Validación fallida' };
       }
 
       const promoCode = await this.promoCodeRepository.findByCode(code);
@@ -101,16 +117,16 @@ export class PromoCodeEngine {
         uuid(),
         promoCode.id,
         orderId,
-        order.getBuyer().id,
+        order.getOrderContext().buyerProfile.buyerId,
         calcResult.discountAmount,
         false,
       );
 
-      const savedUsage = await this.usageRepository.create(usage);
+      await this.usageRepository.save(usage);
 
       return {
         success: true,
-        usageId: savedUsage.id,
+        usageId: usage.id,
         discount: calcResult,
       };
     } catch (error) {
