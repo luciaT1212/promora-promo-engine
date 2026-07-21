@@ -1,5 +1,4 @@
 import { PromoCodeEngine } from './promo-code-engine';
-import { ValidationEngine } from './validation-engine';
 import { MandatoryValidationPipeline } from '../validation/pipelines/mandatory-validation.pipeline';
 import { DynamicValidationPipeline } from '../validation/pipelines/dynamic-validation.pipeline';
 import { ValidationRuleFactory } from '../factories/validation-rule.factory';

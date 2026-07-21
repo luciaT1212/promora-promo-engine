@@ -32,7 +32,10 @@ export class PromoCodeEngine {
     private readonly promoCodeRepository: IPromoCodeRepository,
     private readonly usageRepo: IPromoCodeUsageRepository,
   ) {
-    this.validationEngine = new ValidationEngine(mandatoryPipeline, dynamicPipeline);
+    this.validationEngine = new ValidationEngine(
+      mandatoryPipeline,
+      dynamicPipeline,
+    );
   }
 
   async validate(

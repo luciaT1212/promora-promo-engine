@@ -17,13 +17,6 @@ export class PrismaOrderRepository implements IOrderRepository {
       include: { buyer: true },
     });
     if (!row) return null;
-    const currentOrders = await this.prisma.order.findMany({
-      where: {
-        buyerId: row.buyerId,
-        status: { in: ['draft', 'cart', 'pending', 'cancelled'] },
-      },
-      select: { id: true },
-    });
     const paidCount = await this.countPaidByBuyer(row.buyerId);
     const buyer = new BuyerProfile(row.buyer.id, paidCount, paidCount === 0);
     const context = new OrderContext(

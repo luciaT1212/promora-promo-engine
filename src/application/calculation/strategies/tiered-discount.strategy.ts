@@ -3,7 +3,6 @@ import { IDiscountStrategy } from '../discount-strategy.interface';
 import { DiscountType } from '../../../domain/entities/promo-code.types';
 import { PromoCode } from '../../../domain/entities/promo-code';
 import { OrderableInterface } from '../../../domain/interfaces/orderable.interface';
-import { TierConfiguration } from '../../../domain/entities/tier-configuration';
 
 @Injectable()
 export class TieredDiscountStrategy implements IDiscountStrategy {
@@ -25,7 +24,9 @@ export class TieredDiscountStrategy implements IDiscountStrategy {
     }
 
     const sortedTiers = [...tiers].sort((a, b) => b.minOrders - a.minOrders);
-    const applicableTier = sortedTiers.find((tier) => tier.minOrders <= orderCount);
+    const applicableTier = sortedTiers.find(
+      (tier) => tier.minOrders <= orderCount,
+    );
 
     if (!applicableTier) {
       return 0;

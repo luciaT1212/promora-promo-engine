@@ -12,7 +12,10 @@ export class DiscountCalculator {
     this.strategies = strategies;
   }
 
-  calculate(promoCode: PromoCode, order: OrderableInterface): CalculationResult {
+  calculate(
+    promoCode: PromoCode,
+    order: OrderableInterface,
+  ): CalculationResult {
     const strategy = this.selectStrategy(promoCode.type);
 
     if (!strategy) {
@@ -30,14 +33,11 @@ export class DiscountCalculator {
       throw new Error(`Descuento negativo inválido: ${discountAmount}`);
     }
 
-    return new CalculationResult(
-      discountAmount,
-      promoCode.type,
-      subtotal,
-    );
+    return new CalculationResult(discountAmount, promoCode.type, subtotal);
   }
 
   private selectStrategy(type: any): IDiscountStrategy | undefined {
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
     return this.strategies.find((s) => s.canHandle(type));
   }
 }

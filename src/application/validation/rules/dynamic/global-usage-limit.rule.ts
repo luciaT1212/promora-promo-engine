@@ -18,9 +18,7 @@ export class GlobalUsageLimitRule extends ValidationRule {
 
     const limit = Number(rule.parameters.limit ?? 0);
 
-    const count = await this.usageRepo.countPaidUsesByCode(
-      context.promo!.id,
-    );
+    const count = await this.usageRepo.countPaidUsesByCode(context.promo!.id);
 
     if (count >= limit) {
       return ValidationResult.failure(ErrorCode.USAGE_LIMIT_REACHED);

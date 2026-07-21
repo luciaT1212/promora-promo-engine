@@ -12,7 +12,9 @@ export class CalculationResult {
     originalSubtotal: number,
   ) {
     if (discountAmount > originalSubtotal) {
-      throw new Error(`Descuento (${discountAmount}) no puede exceder subtotal (${originalSubtotal})`);
+      throw new Error(
+        `Descuento (${discountAmount}) no puede exceder subtotal (${originalSubtotal})`,
+      );
     }
     this.discountAmount = discountAmount;
     this.discountType = discountType;

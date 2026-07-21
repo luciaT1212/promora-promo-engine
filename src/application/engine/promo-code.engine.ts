@@ -33,12 +33,12 @@ export class PromoCodeEngine {
   async validate(
     code: string,
     order: OrderableInterface,
-    buyer?: any,
   ): Promise<ValidationResult> {
     try {
       const promoCode = await this.promoCodeRepository.findByCode(code);
 
       if (!promoCode) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return ValidationResult.failure('INVALID_CODE' as any);
       }
 
@@ -57,7 +57,8 @@ export class PromoCodeEngine {
 
       const dynamicResult = await this.dynamicPipeline.execute(context);
       return dynamicResult;
-    } catch (error) {
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return ValidationResult.failure('VALIDATION_ERROR' as any);
     }
   }
@@ -65,24 +66,25 @@ export class PromoCodeEngine {
   async calculate(
     code: string,
     order: OrderableInterface,
-    buyer?: any,
   ): Promise<CalculationResult | ValidationResult> {
-    const validation = await this.validate(code, order, buyer);
+    const validation = await this.validate(code, order);
 
     if (!validation.isValid) {
-      return validation as any;
+      return validation;
     }
 
     try {
       const promoCode = await this.promoCodeRepository.findByCode(code);
 
       if (!promoCode) {
+        // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
         return ValidationResult.failure('INVALID_CODE' as any);
       }
 
       const result = this.discountCalculator.calculate(promoCode, order);
       return result;
-    } catch (error) {
+    } catch {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
       return ValidationResult.failure('CALCULATION_ERROR' as any);
     }
   }
@@ -92,9 +94,14 @@ export class PromoCodeEngine {
     orderId: string,
     order: OrderableInterface,
     buyer?: any,
-  ): Promise<{ success: boolean; usageId?: string; discount?: CalculationResult; error?: string }> {
+  ): Promise<{
+    success: boolean;
+    usageId?: string;
+    discount?: CalculationResult;
+    error?: string;
+  }> {
     try {
-      const calcResult = await this.calculate(code, order, buyer);
+      const calcResult = await this.calculate(code, order);
 
       if (calcResult instanceof ValidationResult) {
         return { success: false, error: 'Validación fallida' };

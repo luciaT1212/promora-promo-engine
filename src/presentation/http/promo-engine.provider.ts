@@ -1,9 +1,7 @@
 import { PromoCodeEngine } from '../../application/engine/promo-code-engine';
-import { ValidationEngine } from '../../application/engine/validation-engine';
 import { MandatoryValidationPipeline } from '../../application/validation/pipelines/mandatory-validation.pipeline';
 import { DynamicValidationPipeline } from '../../application/validation/pipelines/dynamic-validation.pipeline';
 import { ValidationRuleFactory } from '../../application/factories/validation-rule.factory';
-import { DiscountStrategyFactory } from '../../application/factories/discount-strategy.factory';
 import { DiscountCalculator } from '../../application/calculation/discount-calculator';
 import { FixedDiscountStrategy } from '../../application/calculation/strategies/fixed-discount.strategy';
 import { PercentDiscountStrategy } from '../../application/calculation/strategies/percent-discount.strategy';

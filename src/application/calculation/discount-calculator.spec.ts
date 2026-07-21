@@ -5,7 +5,7 @@ import { OrderFactory } from '../../testing/factories/order.factory';
 import { BuyerFactory } from '../../testing/factories/buyer.factory';
 import { TierConfiguration } from '../../domain/entities/tier-configuration';
 import { FixedDiscountStrategy } from './strategies/fixed-discount.strategy';
-import { PercentDiscountStrategy } from './strategies/percentage-discount.strategy';
+import { PercentDiscountStrategy } from './strategies/percent-discount.strategy';
 import { TieredDiscountStrategy } from './strategies/tiered-discount.strategy';
 
 describe('DiscountCalculator', () => {

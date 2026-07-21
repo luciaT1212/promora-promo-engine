@@ -18,9 +18,7 @@ export class GlobalAmountLimitRule extends ValidationRule {
 
     const maxTotal = Number(rule.parameters.maxTotalAmount ?? 0);
 
-    const total = await this.usageRepo.sumPaidDiscountByCode(
-      context.promo!.id,
-    );
+    const total = await this.usageRepo.sumPaidDiscountByCode(context.promo!.id);
 
     if (total >= maxTotal) {
       return ValidationResult.failure(ErrorCode.MAXIMUM_DISCOUNT_REACHED);
