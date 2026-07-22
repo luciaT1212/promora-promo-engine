@@ -42,4 +42,23 @@ export class DiscountStrategyFactory {
     const strategy: IDiscountStrategy = creator.create();
     return strategy;
   }
+
+  static fromList(strategies: IDiscountStrategy[]): DiscountStrategyFactory {
+    const factory = new DiscountStrategyFactory();
+    const emptyFactory = new DiscountStrategyFactory();
+    emptyFactory.creators.clear();
+
+    for (const strategy of strategies) {
+      for (const type of Object.values(DiscountType)) {
+        if (strategy.canHandle(type)) {
+          emptyFactory.register(
+            type,
+            new RegisteredDiscountStrategyCreator(() => strategy),
+          );
+        }
+      }
+    }
+
+    return emptyFactory;
+  }
 }

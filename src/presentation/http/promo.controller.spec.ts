@@ -28,7 +28,7 @@ describe('PromoController (integracion HTTP)', () => {
     const response = await controller.calculate(buildRequest());
     expect(response.valid).toBe(true);
     expect(response.discount!.discountAmount).toBe(15);
-    expect(response.discount!.finalAmount).toBe(85);
+    expect(response.discount!.finalSubtotal).toBe(85);
   });
 
   it('codigo inexistente retorna invalid_code', async () => {

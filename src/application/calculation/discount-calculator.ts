@@ -3,13 +3,24 @@ import { IDiscountStrategy } from './discount-strategy.interface';
 import { CalculationResult } from '../../domain/value-objects/calculation-result';
 import { PromoCode } from '../../domain/entities/promo-code';
 import { OrderableInterface } from '../../domain/interfaces/orderable.interface';
+import { DiscountStrategyFactory } from '../factories/discount-strategy.factory';
+import { MaxDiscountAmountRule } from './post-rules/max-discount-amount.rule';
 
 @Injectable()
 export class DiscountCalculator {
-  private strategies: IDiscountStrategy[] = [];
+  private strategyFactory: DiscountStrategyFactory;
+  private maxDiscountRule: MaxDiscountAmountRule;
 
-  constructor(strategies: IDiscountStrategy[]) {
-    this.strategies = strategies;
+  constructor(
+    strategies: IDiscountStrategy[] | DiscountStrategyFactory,
+    maxDiscountRule: MaxDiscountAmountRule = new MaxDiscountAmountRule(),
+  ) {
+    if (Array.isArray(strategies)) {
+      this.strategyFactory = DiscountStrategyFactory.fromList(strategies);
+    } else {
+      this.strategyFactory = strategies;
+    }
+    this.maxDiscountRule = maxDiscountRule;
   }
 
   calculate(
@@ -27,7 +38,8 @@ export class DiscountCalculator {
       throw new Error(`Subtotal negativo inválido: ${subtotal}`);
     }
 
-    const discountAmount = strategy.calculate(promoCode, order);
+    let discountAmount = strategy.calculate(promoCode, order);
+    discountAmount = this.maxDiscountRule.apply(promoCode, discountAmount);
 
     if (discountAmount < 0) {
       throw new Error(`Descuento negativo inválido: ${discountAmount}`);
@@ -37,8 +49,12 @@ export class DiscountCalculator {
   }
 
   private selectStrategy(type: any): IDiscountStrategy | undefined {
-    // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-    return this.strategies.find((s) => s.canHandle(type));
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
+      return this.strategyFactory.getStrategy(type);
+    } catch {
+      return undefined;
+    }
   }
 }
 
