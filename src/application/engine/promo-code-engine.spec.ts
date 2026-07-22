@@ -76,7 +76,7 @@ describe('PromoCodeEngine (integracion)', () => {
     expect(result.validation.isValid).toBe(true);
     expect(result.calculation).not.toBeNull();
     expect(result.calculation!.discountAmount).toBe(40);
-    expect(result.calculation!.finalAmount).toBe(160);
+    expect(result.calculation!.finalSubtotal).toBe(160);
   });
 
   it('validateAndCalculate: si la validacion falla, calculation es null', async () => {

@@ -40,6 +40,6 @@ describe('Factories - smoke tests', () => {
   it('OrderFactory crea Order con context completo', () => {
     const order = OrderFactory.create({ subtotal: 250, categoryId: 'cat-1' });
     expect(order.getSubtotal()).toBe(250);
-    expect(order.getOrderContext().categoryId).toBe('cat-1');
+    expect(order.getOrderContext().categories).toContain('cat-1');
   });
 });
